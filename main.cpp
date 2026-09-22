@@ -14,6 +14,18 @@
 #define C_PURPLE "\033[35m"
 #define C_CYAN "\033[36m"
 
+//const size_t MAX_LENGTH = 1024;
+const int EDA = 3802;
+const char* TEXT_SEPARATOR = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+
+enum compare_results {
+    COMPARE_ERROR = -2,
+    FIRST_HIGHER = -1,
+    EQUAL = 0,
+    SECOND_HIGHER = 1
+};
+
+
 void ClearFile(const char* filename);
 off_t ParseFile(const char* filename, char** text, char*** indexes, int* index_num);
 off_t MeasureFile(const char* filename);
@@ -32,18 +44,8 @@ void PrintArray(char* s, int const s_length);
 void ArrayCopy(char** arr_copy, char** arr_origin, const int s_length);
 
 int CompareCharUp(char* a, char* b);
-int CompareCharDown(char* a, char* b);
 int CompareLastCharUp(char*a, char* b);
 
-//const size_t MAX_LENGTH = 1024;
-const int EDA = 3802;
-const char* TEXT_SEPARATOR = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-
-enum compare_results {
-    FIRST_HIGHER = -1,
-    EQUAL = 0,
-    SECOND_HIGHER = 1
-};
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -63,10 +65,10 @@ int main(int argc, char* argv[]) {
     int index_num = 0;
     off_t file_length = ParseFile(filename, &text, &indexes, &index_num);
     printf(C_CYAN "DEBUG: File was read, file_length = %lld, index_num = %d\n" C_RESET, file_length, index_num);
-    
+
     char compare_type = '\0';
     int (*how_to_compare)(char*, char*) = NULL;
-    
+
     compare_type = 'u';
     PickCompareType(compare_type, &how_to_compare);
 
@@ -76,7 +78,7 @@ int main(int argc, char* argv[]) {
     MergeSort(indexes, index_num, how_to_compare);
     printf(C_YELLOW "DEBUG: Ended sorting\n" C_RESET);
 
-    PrintTextByIndex(indexes, index_num, sorted_filename); 
+    PrintTextByIndex(indexes, index_num, sorted_filename);
     printf(C_CYAN "DEBUG: index_num = %d\n" C_RESET, index_num);
 
 
@@ -87,10 +89,10 @@ int main(int argc, char* argv[]) {
     printf(C_YELLOW "DEBUG: Ended sorting\n" C_RESET);
 
 
-    PrintTextByIndex(indexes, index_num, sorted_filename); 
+    PrintTextByIndex(indexes, index_num, sorted_filename);
     printf(C_CYAN "DEBUG: index_num = %d\n" C_RESET, index_num);
 
-    
+
     PrintText(text, file_length, sorted_filename); // prints original
 
     free(text);
@@ -119,7 +121,8 @@ off_t ParseFile(const char* filename, char** text, char*** indexes, int* index_n
     off_t file_length = MeasureFile(filename);
     printf(C_CYAN "DEBUG: file_length = %lld\n" C_RESET, file_length);
 
-    *text = (char*) calloc((size_t) file_length, sizeof(char));
+    *text = (char*) calloc((size_t) file_length + 1, sizeof(char));
+    (*text)[file_length] = '\n';
 
     FILE* fp = fopen(filename, "r");
     assert(fp);
@@ -138,7 +141,7 @@ off_t ParseFile(const char* filename, char** text, char*** indexes, int* index_n
 
     FillIndexes(text, indexes, file_length);
     assert((*indexes)[*index_num + 1] == (char*) EDA);
-    
+
     printf(C_PURPLE "DEBUG: Ended ParseFile\n" C_RESET);
     return file_length;
 }
@@ -161,7 +164,7 @@ int CountNewLines(char* text, const off_t file_length) {
     int lines_num = 0;
     for (int i = 0; i < file_length; i++) {
         assert(0 <= i); assert(i < file_length);
-        
+
         //printf(C_CYAN "DEBUG: i = %d\n" C_RESET, i);
         if (text[i] == '\n') {
             lines_num++;
@@ -188,7 +191,7 @@ void FillIndexes(char** text, char*** indexes, const off_t file_length) {
             index_ind++;
         }
     }
-    
+
     printf(C_CYAN "DEBUG: last index_ind = %d\n" C_RESET, index_ind);
     printf(C_PURPLE "DEBUG: Ended FillIndexes\n" C_RESET);
 }
@@ -203,15 +206,12 @@ void PickCompareType(const char compare_type, int (* *how_to_compare)(char*, cha
         case 'u':
             *how_to_compare = CompareCharUp;
             break;
-        case 'd':
-            *how_to_compare = CompareCharDown;
-            break;
         case 'l':
             *how_to_compare = CompareLastCharUp;
             break;
         default:
-            printf("Unknown type\n");
-            assert(0);
+            printf(C_RED "Unknown type\n" C_RESET);
+            abort();
     }
     printf(C_PURPLE "DEBUG: Ended PickType\n" C_RESET);
 }
@@ -234,6 +234,9 @@ void MergeSort(char** s, const int s_length, int how_to_compare(char*, char*)) {
 }
 
 void Sort2Arrays(char** s, const int s_length, int how_to_compare(char*, char*)) {
+    assert(s);
+    assert(s_length > 0);
+
     char** temp = (char**) calloc((size_t) s_length, sizeof(s[0]));
 
     int i = 0;
@@ -314,7 +317,7 @@ void PrintTextByIndex(char** indexes, const int index_num, const char* sorted_fi
 
     for (int i = 0; i < index_num; i++) {
         //printf(C_CYAN "DEBUG: i = %d; indexes[i] = %p\n" C_RESET, i, indexes[i]);
-        
+
         for (char* ind = indexes[i]; *ind != '\n'; ind++) {
             fprintf(fp, "%c", *ind); // переписать на putchar()???????
         }
@@ -335,7 +338,6 @@ void PrintArray(char** s, const int s_length) {
     assert(s_length >= 0);
     printf(C_CYAN "DEBUG: s_length = %d\n" C_RESET, s_length);
 
-
     for (int i = 0; i < s_length; i++)
         printf("%s ", s[i]);
 
@@ -348,7 +350,7 @@ void ArrayCopy(char** arr_copy, char** arr_origin, const int arr_length) {
     assert(arr_copy);
     assert(arr_origin);
     assert(arr_length >= 0);
-    
+
     for (int i = 0; i < arr_length; i++)
         arr_copy[i] = arr_origin[i];
 }
@@ -358,11 +360,6 @@ int CompareCharUp(char* a, char* b) {
     assert(a); assert(b);
 
     int i = 0, j = 0;
-
-    if (a[0] == '\n')
-        return FIRST_HIGHER;
-    if (b[0] == '\n')
-        return SECOND_HIGHER;
 
     while (a[i] != '\n' && b[j] != '\n') {
         while (!isalpha(a[i])) {
@@ -376,59 +373,24 @@ int CompareCharUp(char* a, char* b) {
                 return SECOND_HIGHER;
         }
 
-        if (tolower(a[i]) > tolower(b[i]))
-            return SECOND_HIGHER;
-        if (tolower(a[i]) < tolower(b[i]))
-            return FIRST_HIGHER;
-        
-        i++;
-        j++;
-    }
-
-    if (a[i] == '\n')
-        return FIRST_HIGHER;
-    if (b[j] == '\n')
-        return SECOND_HIGHER;
-
-    return EQUAL;
-}
-
-int CompareCharDown(char* a, char* b) {
-    assert(a); assert(b);
-
-    int i = 0, j = 0;
-    if (a[0] == '\n')
-        return SECOND_HIGHER;
-    if (b[0] == '\n')
-        return FIRST_HIGHER;
-
-    while (a[i] != '\n' && b[i] != '\n') {
-        while (!isalnum(a[i]) || isspace(a[i])) {
-            i++;
-            if (a[i] == '\n')
-                return SECOND_HIGHER;
-        }
-        while (!isalnum(b[j]) || isspace(b[j])) {
-            j++;
-            if (b[j] == '\n')
-                return FIRST_HIGHER;
-        }
-
         if (tolower(a[i]) > tolower(b[j]))
-            return FIRST_HIGHER;
-        if (tolower(a[i]) < tolower(b[j]))
             return SECOND_HIGHER;
-        
+        if (tolower(a[i]) < tolower(b[j]))
+            return FIRST_HIGHER;
+
         i++;
         j++;
     }
 
-    if (a[i] == '\n')
-        return SECOND_HIGHER;
-    if (b[j] == '\n')
-        return FIRST_HIGHER;
 
-    return EQUAL;
+    if (a[i] == '\n' && b[j] == '\n')
+        return EQUAL;
+    if (a[i] == '\n')
+        return FIRST_HIGHER;
+    if (b[j] == '\n')
+        return SECOND_HIGHER;
+
+    return COMPARE_ERROR;
 }
 
 int CompareLastCharUp(char*a, char* b) {
@@ -465,14 +427,14 @@ int CompareLastCharUp(char*a, char* b) {
             return SECOND_HIGHER;
         if (tolower(a[i]) < tolower(b[j]))
             return FIRST_HIGHER;
-        
+
         i--;
         j--;
     }
+
     if (i < 0)
         return FIRST_HIGHER;
     if (j < 0)
         return SECOND_HIGHER;
-
-    return EQUAL;
+    return COMPARE_ERROR;
 }
