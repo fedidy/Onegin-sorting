@@ -1,4 +1,4 @@
 *.out
 *.txt
 *.dSYM
-.DS_Store
+*.DS_Store
