@@ -1,0 +1,4 @@
+*.out
+*.txt
+*.dSYM
+.DS_Store
